@@ -267,8 +267,8 @@ AFRAME.registerComponent('matrix-rain', {
     <a-scene shadow="type: pcfsoft">
         <a-assets>
             <!-- Шрифты -->
-            <a-asset-item id="custom-font" src="msdf/pixelizer/PressStart2P-Regular-msdf.json"></a-asset-item>
-            <img id="custom-font-image" src="msdf/pixelizer/PressStart2P-Regular.png">
+            <a-asset-item id="custom-font" src="msdf/pixelizer/PressStart2P-msdf.json"></a-asset-item>
+            <img id="custom-font-image" src="msdf/pixelizer/PressStart2P.png">
             
             <!-- 3д модели -->
             <a-asset-item id="rpo-server" src="models/rpo/server/server.glb"></a-asset-item>
@@ -351,10 +351,6 @@ AFRAME.registerComponent('matrix-rain', {
 
             </a-entity>
            
-            
-            
-        
-            
             <!--  элемент "Управление" -->
             <a-entity position="2.2 1.25 -2.2" rotation="0 -45 0">
                 <a-plane width="2" height="1.5" color="#212121" opacity="0.8" roughness="1"></a-plane>
@@ -370,7 +366,7 @@ AFRAME.registerComponent('matrix-rain', {
                         transparent="true" 
                         alpha-test="0.01">
                     </a-image>
-                    <a-text custom-font value="ВИАР" align="left" color="white" position="-0.8 0.4 0.01" scale="0.8 0.8 0.8"></a-text>
+                    <a-text custom-font value="VR" align="left" color="white" position="-0.8 0.4 0.01" scale="0.8 0.8 0.8"></a-text>
                     <a-text custom-font value="Для взаимодействия\nиспользуйте триггер" align="left" width="2.8" color="white" position="-0.8 0.26 0.01" scale="0.8 0.8 0.8"></a-text>
                 </a-entity>
 
@@ -485,9 +481,9 @@ AFRAME.registerComponent('matrix-rain', {
             <a-circle position="0 -0.5 0" rotation="-90 0 0" radius="5.65" color="#2e2e2e" emissive="#121212" id="scene-plane"></a-circle>
             <a-sky color="#2e2e2e"></a-sky>
             <a-entity position="0 1.2 -4">
-                <a-text id="msg-one" value="Привет!" custom-font align="center" color="white" scale="2 2 2" opacity="1"></a-text>
+                <a-text id="msg-one" value="Привет!" custom-font align="center" color="white" scale="2 2 2" opacity="0"></a-text>
                 <a-text id="msg-two" value="Ты стоишь на перепутье, кем же тебе стать.." custom-font align="center" color="white" scale="2 2 2" opacity="0" visible="true"></a-text>
-                <a-text id="msg-three" value="Выбрать направление очень важно, и мы тебе поможем в этом" custom-font align="center" color="white" scale="2 2 2" opacity="0" visible="true"></a-text>
+                <a-text id="msg-three" value="Выбрать направление очень важно, и мы тебе поможем в этом!" custom-font align="center" color="white" scale="2 2 2" opacity="0" visible="true"></a-text>
                 <a-text id="msg-four" value="Мы покажем тебе 5 направлений нашего факультета" custom-font align="center" color="white" scale="2 2 2" opacity="0" visible="true"></a-text>
                 <a-text id="msg-five" value="И покажем суть каждого!" custom-font align="center" color="white" scale="2 2 2" opacity="0" visible="true"></a-text>
                 <a-text id="msg-six" value="Выбирай!" custom-font align="center" color="white" scale="2 2 2" opacity="0" visible="true"></a-text>
@@ -925,35 +921,46 @@ AFRAME.registerComponent('matrix-rain', {
 
 
 
-        function typeText(element, text, speed = 5, maxCharsPerLine = 39) {
-            return new Promise(resolve => {
-                const wrappedText = wrapText(text, maxCharsPerLine); 
-                let index = 0;
-                element.setAttribute('value', '');
-                const typeSound = document.querySelector('#type-sound');
-                if (typeSound) {
-                    typeSound.volume = 0.5;
-                }
-
-                const interval = setInterval(() => {
-                    if (index < wrappedText.length) {
-                        element.setAttribute('value', wrappedText.substring(0, index + 1));
-                        if (typeSound && typeSound.paused) {
-                            typeSound.currentTime = 0;
-                            typeSound.play();
-                        }
-                        index++;
-                    } else {
-                        clearInterval(interval);
-                        if (typeSound && !typeSound.paused) {
-                            typeSound.pause();
-                            typeSound.currentTime = 0;
-                        }
-                        resolve();
-                    }
-                }, speed);
-            });
+       function typeText(element, text, speed = 40, maxCharsPerLine = 39, dotDelay = 800) {
+    return new Promise(resolve => {
+        const wrappedText = wrapText(text, maxCharsPerLine);
+        let index = 0;
+        element.setAttribute('value', '');
+        const typeSound = document.querySelector('#type-sound');
+        if (typeSound) {
+            typeSound.volume = 0.5;
         }
+
+        function typeNextChar() {
+            if (index < wrappedText.length) {
+                const currentChar = wrappedText[index];
+                element.setAttribute('value', wrappedText.substring(0, index + 1));
+                if (typeSound && typeSound.paused) {
+                    typeSound.currentTime = 0;
+                    typeSound.play();
+                }
+                index++;
+
+                // Проверяем, является ли текущий символ точкой, восклицательным или вопросительным знаком
+                if (currentChar === '.' || currentChar === '!' || currentChar === '?') {
+                    typeSound.pause();
+                    typeSound.currentTime = 0;
+                    setTimeout(typeNextChar, dotDelay); // Задержка после '.', '!' или '?'
+                } else {
+                    setTimeout(typeNextChar, speed); // Обычная скорость для других символов
+                }
+            } else {
+                if (typeSound && !typeSound.paused) {
+                    typeSound.pause();
+                    typeSound.currentTime = 0;
+                }
+                resolve();
+            }
+        }
+
+        typeNextChar(); // Запускаем первый символ
+    });
+}
 
         // Конфигурация сцен
         const sceneConfig = {
@@ -1202,215 +1209,219 @@ function initializeScene(sceneKey) {
         initializeScene('diz');
 
         // Логика переключения на транзитную сцену
-        document.querySelector('#button-next').addEventListener('click', async () => {
-            const mainScene = document.querySelector('#main-scene');
-            const transitionScene = document.querySelector('#transition-scene');
-            const buttonNext = document.querySelector('#button-next');
-            const buttonNextPlane = buttonNext.querySelector('a-plane'); // Получаем a-plane внутри button-next
-            const buttonTest = document.querySelector('#button-test'); // Добавляем button-test
-            const buttonTestPlane = buttonTest.querySelector('a-plane'); // Получаем a-plane внутри button-test
-            const buttonBack = document.querySelector('#button-back');
-            const background = document.querySelector('#background');
-            const firstMusic = document.querySelector('#transition-first-music');
-            const secondMusic = document.querySelector('#transition-second-music');
+ // Логика переключения на транзитную сцену
+document.querySelector('#button-next').addEventListener('click', async () => {
+    const mainScene = document.querySelector('#main-scene');
+    const transitionScene = document.querySelector('#transition-scene');
+    const buttonNext = document.querySelector('#button-next');
+    const buttonNextPlane = buttonNext.querySelector('a-plane');
+    const buttonTest = document.querySelector('#button-test');
+    const buttonTestPlane = buttonTest.querySelector('a-plane');
+    const buttonBack = document.querySelector('#button-back');
+    const background = document.querySelector('#background');
+    const firstMusic = document.querySelector('#transition-first-music');
+    const secondMusic = document.querySelector('#transition-second-music');
 
-         // Переключаем сцену и ждём завершения затемнения
-        await fadeTransition(() => {
-            mainScene.setAttribute('visible', 'false');
-            transitionScene.setAttribute('visible', 'true');
-            buttonNextPlane.classList.remove('clickable');
-            buttonBack.classList.add('clickable');
-            buttonTest.setAttribute('visible', 'false');
-            buttonTestPlane.classList.remove('clickable');
-            background.setAttribute('environment', 'preset: none');
-            firstMusic.components.sound.playSound();
-        });
-
-            const messages = [
-                { id: '#msg-one', delay: 10 },
-                { id: '#msg-two', delay: 10 },
-                { id: '#msg-three', delay: 10 },
-                { id: '#msg-four', delay: 10 },
-                { id: '#msg-five', delay: 10 },
-                { id: '#msg-six', delay: 0 }
-            ];
-
-            const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-            const animationDuration = 10;
-            const pauseBeforeFadeIn = 10;
-
-            const animateOpacity = (element, from, to, duration) => {
-                return new Promise(resolve => {
-                    element.setAttribute('animation', {
-                        property: 'opacity',
-                        from: from,
-                        to: to,
-                        dur: duration,
-                        easing: 'easeInOutQuad'
-                    });
-                    element.addEventListener('animationcomplete', function handler() {
-                        if (to === 0) element.classList.remove('clickable');
-                        else if (to > 0) element.classList.add('clickable');
-                        element.removeEventListener('animationcomplete', handler);
-                        resolve();
-                    }, { once: true });
-                });
-            };
-
-            const fadeOutSound = (sound, duration) => {
-                return new Promise(resolve => {
-                    const initialVolume = sound.getAttribute('volume') || 0.5;
-                    let currentVolume = initialVolume;
-                    const step = initialVolume / (duration / 100);
-                    const fadeInterval = setInterval(() => {
-                        currentVolume -= step;
-                        if (currentVolume <= 0) {
-                            currentVolume = 0;
-                            sound.components.sound.stopSound();
-                            clearInterval(fadeInterval);
-                            resolve();
-                        }
-                        sound.setAttribute('volume', currentVolume);
-                    }, 100);
-                });
-            };
-
-            for (let i = 0; i < messages.length - 1; i++) {
-                const current = document.querySelector(messages[i].id);
-                const next = document.querySelector(messages[i + 1].id);
-
-                await sleep(messages[i].delay - animationDuration);
-                await animateOpacity(current, 1, 0, animationDuration);
-                current.parentNode.removeChild(current);
-                await sleep(pauseBeforeFadeIn);
-                await animateOpacity(next, 0, 1, animationDuration);
-
-                if (next.id === 'msg-three') {
-                    await fadeOutSound(firstMusic, 400);
-                    secondMusic.components.sound.playSound();
-                }
-
-                if (next.id === 'msg-six') {
-    const portalsContainer = document.querySelector('#portals');
-    const portals = portalsContainer.querySelectorAll('a-circle');
-    const portalTexts = portalsContainer.querySelectorAll('a-text');
-    const portalLight = document.querySelector('#portal-light');
-
-    // Получаем все элементы <a-light> и частицы для порталов
-    const portalsLights = [
-        document.querySelector('#portal-light-portal1'),
-        document.querySelector('#portal-light-portal2'),
-        document.querySelector('#portal-light-portal3'),
-        document.querySelector('#portal-light-portal4'),
-        document.querySelector('#portal-light-portal5'),
-        document.querySelector('#portal-light-portal6')
-    ];
-    const portalParticles = portalsContainer.querySelectorAll('[simple-particles]');
-
-    await sleep(500);
-
-    portalLight.setAttribute('animation', {
-        property: 'intensity',
-        from: '0',
-        to: '55',
-        dur: 1000,
-        easing: 'easeInOutQuad'
+    // Переключаем сцену и ждём завершения затемнения
+    await fadeTransition(() => {
+        mainScene.setAttribute('visible', 'false');
+        transitionScene.setAttribute('visible', 'true');
+        buttonNextPlane.classList.remove('clickable');
+        buttonBack.classList.add('clickable');
+        buttonTest.setAttribute('visible', 'false');
+        buttonTestPlane.classList.remove('clickable');
+        background.setAttribute('environment', 'preset: none');
+        firstMusic.components.sound.playSound();
     });
 
-    const animatePortalLight = (light) => {
-        if (light) {
-            // Делаем свет видимым и устанавливаем начальную интенсивность
-            light.setAttribute('visible', 'true');
-            light.setAttribute('intensity', '0'); // Устанавливаем начальное значение явно
+    const messages = [
+        { id: '#msg-one', delay: 3000 },
+        { id: '#msg-two', delay: 3000 },
+        { id: '#msg-three', delay: 3000 },
+        { id: '#msg-four', delay: 3000 },
+        { id: '#msg-five', delay: 3000 },
+        { id: '#msg-six', delay: 0 }
+    ];
 
-            // Первая анимация: появление света с 0 до 1.5
-            light.setAttribute('animation__appear', {
-                property: 'intensity',
-                from: '0',
-                to: '7', // Начальное значение для последующей пульсации
-                dur: 1000,
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const animationDuration = 1000; // Длительность анимации в миллисекундах
+    const pauseBeforeFadeIn = 500; // Пауза перед появлением следующего сообщения
+
+    const animateOpacity = (element, from, to, duration) => {
+        return new Promise(resolve => {
+            element.setAttribute('animation', {
+                property: 'opacity',
+                from: from,
+                to: to,
+                dur: duration,
                 easing: 'easeInOutQuad'
             });
-
-            // После завершения первой анимации запускаем пульсацию (оригинальную из HTML)
-            setTimeout(() => {
-                light.setAttribute('animation__pulse', {
-                    property: 'intensity',
-                    from: '7',
-                    to: '15',
-                    dur: 1000,
-                    loop: 'true',
-                    dir: 'alternate',
-                    easing: 'easeInOutQuad'
-                });
-            }, 1000); // Ждём завершения первой анимации
-        }
+            element.addEventListener('animationcomplete', function handler() {
+                element.removeEventListener('animationcomplete', handler);
+                resolve();
+            }, { once: true });
+        });
     };
 
-    for (let j = 0; j < portals.length; j++) {
-        const portal = portals[j];
-        const text = portalTexts[j];
-        const light = portalsLights[j];
-        const particles = portalParticles[j];
-
-        portal.classList.add('clickable');
-        portal.setAttribute('scale', '0 0 0');
-        portal.setAttribute('opacity', '0');
-        text.setAttribute('scale', '0 0 0');
-        text.setAttribute('opacity', '0');
-
-        // Анимация портала
-        portal.setAttribute('animation__scale', {
-            property: 'scale',
-            from: '0 0 0',
-            to: '1 1 1',
-            dur: 1000,
-            easing: 'easeInOutQuad'
+    const fadeOutSound = (sound, duration) => {
+        return new Promise(resolve => {
+            const initialVolume = sound.getAttribute('volume') || 0.5;
+            let currentVolume = initialVolume;
+            const step = initialVolume / (duration / 100);
+            const fadeInterval = setInterval(() => {
+                currentVolume -= step;
+                if (currentVolume <= 0) {
+                    currentVolume = 0;
+                    sound.components.sound.stopSound();
+                    clearInterval(fadeInterval);
+                    resolve();
+                }
+                sound.setAttribute('volume', currentVolume);
+            }, 100);
         });
-        portal.setAttribute('animation__opacity', {
-            property: 'opacity',
-            from: '0',
-            to: '0.8',
-            dur: 1000,
-            easing: 'easeInOutQuad'
-        });
+    };
 
-        // Анимация текста
-        text.setAttribute('animation__scale', {
-            property: 'scale',
-            from: '0 0 0',
-            to: '0.5 1 1',
-            dur: 1000,
-            easing: 'easeInOutQuad'
-        });
-        text.setAttribute('animation__opacity', {
-            property: 'opacity',
-            from: '0',
-            to: '1',
-            dur: 1000,
-            easing: 'easeInOutQuad'
-        });
+    // Устанавливаем все сообщения как невидимые изначально (кроме первого)
+    messages.forEach((msg, index) => {
+        const element = document.querySelector(msg.id);
+        if (index === 0) {
+            element.setAttribute('opacity', '0'); // Первое сообщение начнёт с opacity 0
+        } else {
+            element.setAttribute('opacity', '0'); // Остальные остаются невидимыми
+            element.setAttribute('visible', 'true'); // Убеждаемся, что они видны для анимации
+        }
+    });
 
-        // Показать частицы и запустить их анимацию
-        if (particles) {
-            particles.setAttribute('visible', 'true');
-            particles.setAttribute('animation__opacity', {
-                property: 'opacity',
+    // Анимация появления сообщений
+    for (let i = 0; i < messages.length; i++) {
+        const current = document.querySelector(messages[i].id);
+        
+        // Плавное появление текущего сообщения
+        await animateOpacity(current, 0, 1, animationDuration);
+
+        // Если это не последнее сообщение, ждём задержку и плавно скрываем
+        if (i < messages.length - 1) {
+            await sleep(messages[i].delay - animationDuration); // Ждём основную задержку минус время анимации
+            await animateOpacity(current, 1, 0, animationDuration); // Плавное исчезновение
+            current.parentNode.removeChild(current); // Удаляем после исчезновения
+            await sleep(pauseBeforeFadeIn); // Пауза перед следующим появлением
+
+            if (messages[i + 1].id === '#msg-three') {
+                await fadeOutSound(firstMusic, 400);
+                secondMusic.components.sound.playSound();
+            }
+        }
+
+        // Если это последнее сообщение (#msg-six), запускаем порталы
+        if (messages[i].id === '#msg-six') {
+            const portalsContainer = document.querySelector('#portals');
+            const portals = portalsContainer.querySelectorAll('a-circle');
+            const portalTexts = portalsContainer.querySelectorAll('a-text');
+            const portalLight = document.querySelector('#portal-light');
+            const portalsLights = [
+                document.querySelector('#portal-light-portal1'),
+                document.querySelector('#portal-light-portal2'),
+                document.querySelector('#portal-light-portal3'),
+                document.querySelector('#portal-light-portal4'),
+                document.querySelector('#portal-light-portal5'),
+                document.querySelector('#portal-light-portal6')
+            ];
+            const portalParticles = portalsContainer.querySelectorAll('[simple-particles]');
+
+            await sleep(500);
+
+            portalLight.setAttribute('animation', {
+                property: 'intensity',
                 from: '0',
-                to: '0.6',
+                to: '55',
                 dur: 1000,
                 easing: 'easeInOutQuad'
             });
-        }
 
-        // Анимация света
-        animatePortalLight(light);
+            const animatePortalLight = (light) => {
+                if (light) {
+                    light.setAttribute('visible', 'true');
+                    light.setAttribute('intensity', '0');
+                    light.setAttribute('animation__appear', {
+                        property: 'intensity',
+                        from: '0',
+                        to: '7',
+                        dur: 1000,
+                        easing: 'easeInOutQuad'
+                    });
+                    setTimeout(() => {
+                        light.setAttribute('animation__pulse', {
+                            property: 'intensity',
+                            from: '7',
+                            to: '15',
+                            dur: 1000,
+                            loop: 'true',
+                            dir: 'alternate',
+                            easing: 'easeInOutQuad'
+                        });
+                    }, 1000);
+                }
+            };
 
-        await sleep(300); // Задержка между появлением каждого портала
-    }
-}
+            for (let j = 0; j < portals.length; j++) {
+                const portal = portals[j];
+                const text = portalTexts[j];
+                const light = portalsLights[j];
+                const particles = portalParticles[j];
+
+                portal.classList.add('clickable');
+                portal.setAttribute('scale', '0 0 0');
+                portal.setAttribute('opacity', '0');
+                text.setAttribute('scale', '0 0 0');
+                text.setAttribute('opacity', '0');
+
+                portal.setAttribute('animation__scale', {
+                    property: 'scale',
+                    from: '0 0 0',
+                    to: '1 1 1',
+                    dur: 1000,
+                    easing: 'easeInOutQuad'
+                });
+                portal.setAttribute('animation__opacity', {
+                    property: 'opacity',
+                    from: '0',
+                    to: '0.8',
+                    dur: 1000,
+                    easing: 'easeInOutQuad'
+                });
+
+                text.setAttribute('animation__scale', {
+                    property: 'scale',
+                    from: '0 0 0',
+                    to: '0.5 1 1',
+                    dur: 1000,
+                    easing: 'easeInOutQuad'
+                });
+                text.setAttribute('animation__opacity', {
+                    property: 'opacity',
+                    from: '0',
+                    to: '1',
+                    dur: 1000,
+                    easing: 'easeInOutQuad'
+                });
+
+                if (particles) {
+                    particles.setAttribute('visible', 'true');
+                    particles.setAttribute('animation__opacity', {
+                        property: 'opacity',
+                        from: '0',
+                        to: '0.6',
+                        dur: 1000,
+                        easing: 'easeInOutQuad'
+                    });
+                }
+
+                animatePortalLight(light);
+                await sleep(300);
             }
-        });
+        }
+    }
+});
 
         // Логика переключения обратно на основную сцену
         document.querySelector('#button-back').addEventListener('click', async () => {
